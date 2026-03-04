@@ -20,7 +20,8 @@ PROFILE_URL = "https://api.anthropic.com/api/oauth/profile"
 REFRESH_URL = "https://platform.claude.com/v1/oauth/token"
 CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 OAUTH_SCOPE = "user:profile user:inference user:sessions:claude_code user:mcp_servers"
-REFRESH_INTERVAL = 60  # 1분마다 갱신
+REFRESH_INTERVAL = 60  # 기본값 (초)
+_refresh_interval = [REFRESH_INTERVAL]  # 런타임 변경 가능
 
 # 실제 Windows 트레이 아이콘 크기 (DPI 반영)
 def _get_tray_icon_size():
@@ -220,7 +221,7 @@ def update_loop(icon):
 
         icon.icon = make_icon(five_pct, seven_pct)
         icon.title = get_tooltip()
-        time.sleep(REFRESH_INTERVAL)
+        time.sleep(_refresh_interval[0])
 
 
 def on_refresh(icon, item):
@@ -260,6 +261,12 @@ def on_toggle_startup(icon, item):
 
 def on_quit(icon, item):
     icon.stop()
+
+
+def set_interval(seconds):
+    def _handler(icon, item):
+        _refresh_interval[0] = seconds
+    return _handler
 
 
 # ── 상세 팝업 ──────────────────────────────────────────────────────────────────
@@ -360,6 +367,17 @@ def main():
     menu = pystray.Menu(
         pystray.MenuItem("상세 보기", show_popup, default=True),
         pystray.MenuItem("지금 갱신", on_refresh),
+        pystray.MenuItem(
+            "갱신 주기",
+            pystray.Menu(
+                pystray.MenuItem("30초", set_interval(30),
+                                 checked=lambda item: _refresh_interval[0] == 30, radio=True),
+                pystray.MenuItem("1분", set_interval(60),
+                                 checked=lambda item: _refresh_interval[0] == 60, radio=True),
+                pystray.MenuItem("5분", set_interval(300),
+                                 checked=lambda item: _refresh_interval[0] == 300, radio=True),
+            ),
+        ),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(
             "시작 프로그램 등록",
