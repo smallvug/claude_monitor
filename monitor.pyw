@@ -14,7 +14,41 @@ from PIL import Image, ImageDraw, ImageFont
 import pystray
 
 # ── 설정 ──────────────────────────────────────────────────────────────────────
-CREDS_PATH = os.path.join(os.environ["USERPROFILE"], ".claude", ".credentials.json")
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor_config.json")
+DEFAULT_CREDS_PATH = os.path.join(os.environ["USERPROFILE"], ".claude", ".credentials.json")
+
+
+def _load_config():
+    """설정 파일에서 credentials 경로 로드"""
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, encoding="utf-8") as f:
+                cfg = json.load(f)
+            path = cfg.get("credentials_path", "")
+            if path and os.path.exists(path):
+                return path
+        except Exception:
+            pass
+    return DEFAULT_CREDS_PATH
+
+
+def _save_config(creds_path):
+    """설정 파일에 credentials 경로 저장"""
+    cfg = {}
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, encoding="utf-8") as f:
+                cfg = json.load(f)
+        except Exception:
+            pass
+    cfg["credentials_path"] = creds_path
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2)
+
+
+CREDS_PATH = _load_config()
+_creds_path = [CREDS_PATH]  # 런타임 변경 가능
+
 API_URL = "https://api.anthropic.com/api/oauth/usage"
 PROFILE_URL = "https://api.anthropic.com/api/oauth/profile"
 REFRESH_URL = "https://platform.claude.com/v1/oauth/token"
@@ -47,15 +81,15 @@ state = {
 
 
 def load_credentials():
-    with open(CREDS_PATH, encoding="utf-8") as f:
+    with open(_creds_path[0], encoding="utf-8") as f:
         return json.load(f)["claudeAiOauth"]
 
 
 def save_credentials(data):
-    with open(CREDS_PATH, encoding="utf-8") as f:
+    with open(_creds_path[0], encoding="utf-8") as f:
         full = json.load(f)
     full["claudeAiOauth"].update(data)
-    with open(CREDS_PATH, "w", encoding="utf-8") as f:
+    with open(_creds_path[0], "w", encoding="utf-8") as f:
         json.dump(full, f, indent=2)
 
 
@@ -315,6 +349,27 @@ def on_toggle_startup(icon, item):
     winreg.CloseKey(key)
 
 
+def on_set_credentials(icon, item):
+    """파일 다이얼로그로 credentials.json 경로 선택"""
+    def _run():
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        path = filedialog.askopenfilename(
+            title="credentials.json 파일 선택",
+            initialdir=os.path.dirname(_creds_path[0]),
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+        )
+        root.destroy()
+        if path:
+            _creds_path[0] = path
+            _save_config(path)
+            on_refresh(icon, item)
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def on_quit(icon, item):
     icon.stop()
 
@@ -434,6 +489,7 @@ def main():
                                  checked=lambda item: _refresh_interval[0] == 300, radio=True),
             ),
         ),
+        pystray.MenuItem("Credentials 경로 설정", on_set_credentials),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(
             "시작 프로그램 등록",

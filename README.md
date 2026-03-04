@@ -56,6 +56,7 @@ pythonw monitor.pyw
 | 우클릭 → 상세 보기 | 상세 팝업 창 열기 |
 | 우클릭 → 지금 갱신 | 즉시 API 호출하여 수치 업데이트 |
 | 우클릭 → 갱신 주기 | 30초 / 1분 / 5분 선택 |
+| 우클릭 → Credentials 경로 설정 | `.credentials.json` 파일 경로를 직접 선택 (파일 다이얼로그) |
 | 우클릭 → 시작 프로그램 등록 | 부팅 시 자동 실행 토글 |
 | 우클릭 → 종료 | 앱 종료 |
 
@@ -80,6 +81,8 @@ Claude Code CLI가 로그인 시 저장하는 OAuth 토큰을 재사용합니다
 ~/.claude/.credentials.json
   └── claudeAiOauth.accessToken  ← Bearer 토큰 (만료 시 refreshToken으로 자동 갱신)
 ```
+
+기본 경로는 `%USERPROFILE%\.claude\.credentials.json`이며, 트레이 메뉴의 **"Credentials 경로 설정"**에서 다른 경로로 변경할 수 있습니다. 변경된 경로는 `monitor_config.json`에 저장되어 다음 실행 시에도 유지됩니다.
 
 ### API
 
@@ -131,6 +134,7 @@ Windows 시스템 트레이 아이콘은 DPI에 따라 크기가 달라집니다
 - [x] 아이콘 더블클릭 시 상세 팝업 창
 - [x] 갱신 주기 메뉴 (30초/1분/5분)
 - [x] 95% 이상 시 아이콘 깜빡임
+- [x] Credentials 경로 설정 (트레이 메뉴에서 파일 선택, `monitor_config.json`에 저장)
 - [ ] 팝업 자동 갱신 (열어 둔 상태에서 수치 업데이트)
 - [ ] 오류 상태 아이콘 (API 실패 시 회색 `?`)
 - [ ] 사용 이력 그래프 (로컬 SQLite)
