@@ -150,10 +150,10 @@ def bg_color(pct, dim=False):
     return base
 
 
-def make_icon(five_pct, seven_pct):
+def make_icon(five_pct, seven_pct, dim=False):
     """세션 숫자를 전체 크기로, 배경색 = 주간 상태"""
     S = ICON_SIZE  # 2x 오버샘플 크기
-    img = Image.new("RGB", (S, S), bg_color(seven_pct))
+    img = Image.new("RGB", (S, S), bg_color(seven_pct, dim=dim))
     draw = ImageDraw.Draw(img)
 
     # 세션이 위험하면 테두리로 경고
@@ -212,6 +212,61 @@ def get_tooltip():
     return "\n".join(lines)
 
 
+# ── 알림 ──────────────────────────────────────────────────────────────────────
+_notified = {80: False, 95: False}
+
+
+def show_toast(title, message):
+    """Windows 풍선 알림 (PowerShell)"""
+    try:
+        import subprocess
+        ps = (
+            'Add-Type -AssemblyName System.Windows.Forms;'
+            '$n=New-Object System.Windows.Forms.NotifyIcon;'
+            '$n.Icon=[System.Drawing.SystemIcons]::Warning;'
+            '$n.Visible=$true;'
+            f'$n.ShowBalloonTip(5000,"{title}","{message}",'
+            '[System.Windows.Forms.ToolTipIcon]::Warning);'
+            'Start-Sleep -Seconds 6;$n.Dispose()'
+        )
+        subprocess.Popen(
+            ['powershell', '-WindowStyle', 'Hidden', '-NonInteractive', '-Command', ps],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        pass
+
+
+def check_alerts(five_pct, seven_pct):
+    """임계값(80%, 95%) 도달 시 알림 (한 번만)"""
+    for threshold, label in [(95, "위험 ⚠"), (80, "주의")]:
+        triggered = five_pct >= threshold or seven_pct >= threshold
+        if triggered and not _notified[threshold]:
+            _notified[threshold] = True
+            parts = []
+            if five_pct >= threshold:
+                parts.append(f"세션 {five_pct}%")
+            if seven_pct >= threshold:
+                parts.append(f"주간 {seven_pct}%")
+            show_toast(f"Claude 사용량 {label}", ", ".join(parts))
+        elif not triggered:
+            _notified[threshold] = False
+
+
+def blink_loop(icon):
+    """95% 이상일 때 아이콘 깜빡임"""
+    bright = [True]
+    while True:
+        five_pct = util_pct(state["five_hour"])
+        seven_pct = util_pct(state["seven_day"])
+        if five_pct >= 95 or seven_pct >= 95:
+            bright[0] = not bright[0]
+            icon.icon = make_icon(five_pct, seven_pct, dim=not bright[0])
+        else:
+            bright[0] = True
+        time.sleep(0.5)
+
+
 def update_loop(icon):
     """백그라운드 갱신 루프"""
     while True:
@@ -221,6 +276,7 @@ def update_loop(icon):
 
         icon.icon = make_icon(five_pct, seven_pct)
         icon.title = get_tooltip()
+        check_alerts(five_pct, seven_pct)
         time.sleep(_refresh_interval[0])
 
 
@@ -395,9 +451,9 @@ def main():
         menu=menu,
     )
 
-    # 백그라운드 갱신 스레드
-    t = threading.Thread(target=update_loop, args=(icon,), daemon=True)
-    t.start()
+    # 백그라운드 스레드
+    threading.Thread(target=update_loop, args=(icon,), daemon=True).start()
+    threading.Thread(target=blink_loop, args=(icon,), daemon=True).start()
 
     icon.run()
 
