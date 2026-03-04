@@ -17,7 +17,9 @@ import pystray
 CREDS_PATH = os.path.join(os.environ["USERPROFILE"], ".claude", ".credentials.json")
 API_URL = "https://api.anthropic.com/api/oauth/usage"
 PROFILE_URL = "https://api.anthropic.com/api/oauth/profile"
-REFRESH_URL = "https://claude.ai/oauth/token"
+REFRESH_URL = "https://platform.claude.com/v1/oauth/token"
+CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
+OAUTH_SCOPE = "user:profile user:inference user:sessions:claude_code user:mcp_servers"
 REFRESH_INTERVAL = 60  # 1분마다 갱신
 
 # 실제 Windows 트레이 아이콘 크기 (DPI 반영)
@@ -66,11 +68,18 @@ def get_token():
             r = requests.post(REFRESH_URL, json={
                 "grant_type": "refresh_token",
                 "refresh_token": creds["refreshToken"],
+                "client_id": CLIENT_ID,
+                "scope": OAUTH_SCOPE,
             }, timeout=10)
             if r.status_code == 200:
-                new_creds = r.json()
-                save_credentials(new_creds)
-                return new_creds["accessToken"]
+                new_data = r.json()
+                # API 응답 키를 credentials.json 형식으로 매핑
+                save_credentials({
+                    "accessToken": new_data["access_token"],
+                    "refreshToken": new_data.get("refresh_token", creds["refreshToken"]),
+                    "expiresAt": int((time.time() + new_data["expires_in"]) * 1000),
+                })
+                return new_data["access_token"]
         except Exception:
             pass
     return creds["accessToken"]
