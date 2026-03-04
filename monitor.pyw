@@ -262,6 +262,92 @@ def on_quit(icon, item):
     icon.stop()
 
 
+# ── 상세 팝업 ──────────────────────────────────────────────────────────────────
+_popup_open = [False]
+
+
+def show_popup(icon=None, item=None):
+    if _popup_open[0]:
+        return
+
+    def _run():
+        _popup_open[0] = True
+        try:
+            import tkinter as tk
+
+            BG = "#1e1e1e"
+            FG = "#ffffff"
+            FG2 = "#aaaaaa"
+            FG3 = "#666666"
+
+            root = tk.Tk()
+            root.title("Claude Code 사용량")
+            root.resizable(False, False)
+            root.attributes("-topmost", True)
+            root.configure(bg=BG)
+
+            pad = tk.Frame(root, bg=BG, padx=18, pady=14)
+            pad.pack()
+
+            tk.Label(pad, text="Claude Code 사용량", bg=BG, fg=FG,
+                     font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(0, 12))
+
+            def add_row(label, pct, reset_str):
+                color = "#%02x%02x%02x" % bg_color(pct)
+                tk.Label(pad, text=label, bg=BG, fg=FG2,
+                         font=("Segoe UI", 9)).pack(anchor="w")
+                row = tk.Frame(pad, bg=BG)
+                row.pack(fill="x", pady=(3, 10))
+                # 프로그레스 바
+                canvas = tk.Canvas(row, width=220, height=16,
+                                   bg="#333333", highlightthickness=0, bd=0)
+                canvas.pack(side="left")
+                bar_w = max(1, int(220 * pct / 100)) if pct > 0 else 0
+                if bar_w:
+                    canvas.create_rectangle(0, 0, bar_w, 16, fill=color, outline="")
+                tk.Label(row, text=f"  {pct}%", bg=BG, fg=FG,
+                         font=("Segoe UI", 10, "bold"), width=5, anchor="w").pack(side="left")
+                if reset_str:
+                    tk.Label(row, text=f"리셋 {reset_str}", bg=BG, fg=FG2,
+                             font=("Segoe UI", 9)).pack(side="left")
+
+            add_row("세션 (5시간)", util_pct(state["five_hour"]), resets_in(state["five_hour"]))
+            add_row("주간 (7일)", util_pct(state["seven_day"]), resets_in(state["seven_day"]))
+            if state["seven_day_sonnet"]:
+                add_row("Sonnet 주간", util_pct(state["seven_day_sonnet"]),
+                        resets_in(state["seven_day_sonnet"]))
+
+            extra = state.get("extra_usage")
+            if extra and extra.get("is_enabled"):
+                used = extra.get("used_credits", 0)
+                limit = extra.get("monthly_limit", 1)
+                tk.Label(pad, text=f"추가 사용: ${used:.2f} / ${limit:.2f}",
+                         bg=BG, fg=FG2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
+
+            if state["error"]:
+                tk.Label(pad, text=f"오류: {state['error'][:60]}", bg=BG, fg="#ff6666",
+                         font=("Segoe UI", 8)).pack(anchor="w", pady=(0, 6))
+
+            if state["last_update"]:
+                tk.Label(pad, text=f"갱신: {state['last_update'].strftime('%H:%M:%S')}",
+                         bg=BG, fg=FG3, font=("Segoe UI", 8)).pack(anchor="w")
+
+            root.protocol("WM_DELETE_WINDOW", root.destroy)
+            root.bind("<Escape>", lambda e: root.destroy())
+
+            # 화면 중앙 배치
+            root.update_idletasks()
+            w, h = root.winfo_width(), root.winfo_height()
+            sw, sh = root.winfo_screenwidth(), root.winfo_screenheight()
+            root.geometry(f"+{(sw - w) // 2}+{(sh - h) // 2}")
+
+            root.mainloop()
+        finally:
+            _popup_open[0] = False
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def main():
     # 초기 데이터 로드
     fetch_usage()
@@ -272,6 +358,7 @@ def main():
     tooltip = get_tooltip()
 
     menu = pystray.Menu(
+        pystray.MenuItem("상세 보기", show_popup, default=True),
         pystray.MenuItem("지금 갱신", on_refresh),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem(
