@@ -18,7 +18,7 @@ CREDS_PATH = os.path.join(os.environ["USERPROFILE"], ".claude", ".credentials.js
 API_URL = "https://api.anthropic.com/api/oauth/usage"
 PROFILE_URL = "https://api.anthropic.com/api/oauth/profile"
 REFRESH_URL = "https://claude.ai/oauth/token"
-REFRESH_INTERVAL = 5 * 60  # 5분마다 갱신
+REFRESH_INTERVAL = 60  # 1분마다 갱신
 
 # 실제 Windows 트레이 아이콘 크기 (DPI 반영)
 def _get_tray_icon_size():
