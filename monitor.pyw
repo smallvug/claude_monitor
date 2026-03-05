@@ -20,7 +20,7 @@ PROFILE_URL = "https://api.anthropic.com/api/oauth/profile"
 REFRESH_URL = "https://platform.claude.com/v1/oauth/token"
 CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 OAUTH_SCOPE = "user:profile user:inference user:sessions:claude_code user:mcp_servers"
-REFRESH_INTERVAL = 60  # 기본값 (초)
+REFRESH_INTERVAL = 300  # 기본값 (초) — 5분
 _refresh_interval = [REFRESH_INTERVAL]  # 런타임 변경 가능
 
 # 실제 Windows 트레이 아이콘 크기 (DPI 반영)
@@ -43,6 +43,7 @@ state = {
     "extra_usage": None,
     "error": None,
     "last_update": None,
+    "retry_after": 0,  # Unix timestamp: 이 시각 이전엔 API 호출 금지
 }
 
 
@@ -96,6 +97,11 @@ def fetch_usage():
             "anthropic-beta": "oauth-2025-04-20",
         }
         r = requests.get(API_URL, headers=headers, timeout=10)
+        if r.status_code == 429:
+            wait = max(60, int(r.headers.get("Retry-After", 60)))
+            state["error"] = f"API 요청 제한 — {wait}초 후 재시도"
+            state["retry_after"] = time.time() + wait
+            return False
         r.raise_for_status()
         data = r.json()
         state["five_hour"] = data.get("five_hour")
@@ -270,7 +276,8 @@ def blink_loop(icon):
 def update_loop(icon):
     """백그라운드 갱신 루프"""
     while True:
-        fetch_usage()
+        if time.time() >= state["retry_after"]:
+            fetch_usage()
         five_pct = util_pct(state["five_hour"])
         seven_pct = util_pct(state["seven_day"])
 
@@ -411,7 +418,17 @@ def show_popup(icon=None, item=None):
     threading.Thread(target=_run, daemon=True).start()
 
 
+def ensure_single_instance():
+    """중복 실행 방지 (Windows 명명된 뮤텍스)"""
+    import ctypes
+    mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "ClaudeMonitorMutex")
+    if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
+        sys.exit(0)
+    return mutex  # GC 방지용 반환
+
+
 def main():
+    _mutex = ensure_single_instance()
     # 초기 데이터 로드
     fetch_usage()
     five_pct = util_pct(state["five_hour"])
@@ -426,12 +443,12 @@ def main():
         pystray.MenuItem(
             "갱신 주기",
             pystray.Menu(
-                pystray.MenuItem("30초", set_interval(30),
-                                 checked=lambda item: _refresh_interval[0] == 30, radio=True),
                 pystray.MenuItem("1분", set_interval(60),
                                  checked=lambda item: _refresh_interval[0] == 60, radio=True),
                 pystray.MenuItem("5분", set_interval(300),
                                  checked=lambda item: _refresh_interval[0] == 300, radio=True),
+                pystray.MenuItem("10분", set_interval(600),
+                                 checked=lambda item: _refresh_interval[0] == 600, radio=True),
             ),
         ),
         pystray.Menu.SEPARATOR,
