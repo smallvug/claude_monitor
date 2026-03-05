@@ -2,7 +2,7 @@
 
 Windows 시스템 트레이에 **Claude Code 플랜 사용량**을 실시간으로 표시하는 경량 모니터링 도구.
 
-![Python](https://img.shields.io/badge/Python-3.14-blue) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey) ![Version](https://img.shields.io/badge/version-0.1.7-green)
+![Python](https://img.shields.io/badge/Python-3.14-blue) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey) ![Version](https://img.shields.io/badge/version-0.1.8-green)
 
 ---
 
@@ -38,12 +38,11 @@ pip install requests pystray Pillow pywin32
 ```bash
 git clone https://github.com/smallvug/claude_monitor.git
 cd claude_monitor
-python -m venv .venv
-.venv\Scripts\pip install requests pystray Pillow pywin32
-.venv\Scripts\pythonw monitor.pyw
 ```
 
-또는 탐색기에서 `monitor.pyw` 더블클릭.
+탐색기에서 **`run.bat`** 더블클릭 — venv 생성 및 패키지 설치를 자동으로 처리합니다.
+
+> **다중 PC / Dropbox 환경**: `.venv`는 PC마다 경로가 달라 공유되지 않습니다. 각 PC에서 `run.bat`을 한 번씩 실행하면 자동으로 설정됩니다.
 
 ---
 
@@ -135,6 +134,7 @@ Windows 시스템 트레이 아이콘은 DPI에 따라 크기가 달라집니다
 - [x] 429 Too Many Requests 처리 (Retry-After 대기, 최소 60초)
 - [x] 중복 실행 방지 (Windows 명명된 뮤텍스)
 - [x] 기본 갱신 주기 5분으로 조정 (다중 PC 환경 대응)
+- [x] run.bat 런처: venv 자동 생성/복구 (Dropbox 다중 PC 대응)
 - [ ] 팝업 자동 갱신 (열어 둔 상태에서 수치 업데이트)
 - [ ] 오류 상태 아이콘 (API 실패 시 회색 `?`)
 - [ ] 사용 이력 그래프 (로컬 SQLite)

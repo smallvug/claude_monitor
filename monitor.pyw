@@ -311,9 +311,8 @@ def on_toggle_startup(icon, item):
     import winreg
     key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
         r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE | winreg.KEY_READ)
-    pythonw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
-    script = os.path.abspath(__file__)
-    cmd = f'"{pythonw}" "{script}"'
+    run_bat = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run.bat")
+    cmd = f'cmd /c start "" "{run_bat}"'
 
     if is_startup_enabled():
         winreg.DeleteValue(key, "ClaudeMonitor")
