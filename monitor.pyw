@@ -98,7 +98,7 @@ def fetch_usage():
         }
         r = requests.get(API_URL, headers=headers, timeout=10)
         if r.status_code == 429:
-            wait = max(60, int(r.headers.get("Retry-After", 60)))
+            wait = _refresh_interval[0]
             state["error"] = f"API 요청 제한 — {wait}초 후 재시도"
             state["retry_after"] = time.time() + wait
             return False

@@ -2,7 +2,7 @@
 
 Windows 시스템 트레이에 **Claude Code 플랜 사용량**을 실시간으로 표시하는 경량 모니터링 도구.
 
-![Python](https://img.shields.io/badge/Python-3.14-blue) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey) ![Version](https://img.shields.io/badge/version-0.1.9-green)
+![Python](https://img.shields.io/badge/Python-3.14-blue) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey) ![Version](https://img.shields.io/badge/version-0.1.10-green)
 
 ---
 
@@ -42,7 +42,7 @@ cd claude_monitor
 
 탐색기에서 **`run.bat`** 더블클릭 — venv 생성 및 패키지 설치를 자동으로 처리합니다.
 
-> **다중 PC / Dropbox 환경**: `.venv`는 PC마다 경로가 달라 공유되지 않습니다. 각 PC에서 `run.bat`을 한 번씩 실행하면 자동으로 설정됩니다.
+> **다중 PC / Dropbox 환경**: venv는 `%USERPROFILE%\.venvs\claude_monitor\`에 생성되어 Dropbox 밖에 위치합니다. 각 PC에서 `run.bat`을 한 번씩 실행하면 자동으로 설정됩니다.
 
 ---
 
