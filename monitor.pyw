@@ -418,11 +418,38 @@ def show_popup(icon=None, item=None):
 
 
 def ensure_single_instance():
-    """중복 실행 방지 (Windows 명명된 뮤텍스)"""
+    """중복 실행 방지 (Windows 명명된 뮤텍스). 이미 실행 중이면 종료 여부 확인."""
     import ctypes
     mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "ClaudeMonitorMutex")
     if ctypes.windll.kernel32.GetLastError() == 183:  # ERROR_ALREADY_EXISTS
-        sys.exit(0)
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        answer = messagebox.askyesno(
+            "Claude Monitor",
+            "이미 실행 중인 인스턴스가 있습니다.\n기존 인스턴스를 종료하고 새로 시작할까요?",
+        )
+        root.destroy()
+        if answer:
+            import subprocess
+            my_pid = str(os.getpid())
+            # 자기 자신(my_pid)을 제외한 모든 pythonw.exe 종료
+            result = subprocess.run(
+                ["wmic", "process", "where", "name='pythonw.exe'", "get", "processid"],
+                capture_output=True, text=True,
+            )
+            for line in result.stdout.strip().splitlines():
+                pid = line.strip()
+                if pid.isdigit() and pid != my_pid:
+                    subprocess.run(["taskkill", "/F", "/PID", pid],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            import time as _t
+            _t.sleep(1)
+            # 뮤텍스 재취득
+            mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "ClaudeMonitorMutex")
+        else:
+            sys.exit(0)
     return mutex  # GC 방지용 반환
 
 

@@ -2,7 +2,7 @@
 
 Windows 시스템 트레이에 **Claude Code 플랜 사용량**을 실시간으로 표시하는 경량 모니터링 도구.
 
-![Python](https://img.shields.io/badge/Python-3.14-blue) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey) ![Version](https://img.shields.io/badge/version-0.1.10-green)
+![Python](https://img.shields.io/badge/Python-3.14-blue) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey) ![Version](https://img.shields.io/badge/version-0.1.11-green)
 
 ---
 
