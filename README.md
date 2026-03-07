@@ -2,7 +2,7 @@
 
 Windows 시스템 트레이에 **Claude Code 플랜 사용량**을 실시간으로 표시하는 경량 모니터링 도구.
 
-![Python](https://img.shields.io/badge/Python-3.14-blue) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey) ![Version](https://img.shields.io/badge/version-0.1.8-green)
+![Python](https://img.shields.io/badge/Python-3.14-blue) ![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey) ![Version](https://img.shields.io/badge/version-0.1.9-green)
 
 ---
 
@@ -131,7 +131,7 @@ Windows 시스템 트레이 아이콘은 DPI에 따라 크기가 달라집니다
 - [x] 아이콘 더블클릭 시 상세 팝업 창
 - [x] 갱신 주기 메뉴 (30초/1분/5분)
 - [x] 95% 이상 시 아이콘 깜빡임
-- [x] 429 Too Many Requests 처리 (Retry-After 대기, 최소 60초)
+- [x] 429 Too Many Requests 처리 (재시도 대기 = 현재 갱신 주기)
 - [x] 중복 실행 방지 (Windows 명명된 뮤텍스)
 - [x] 기본 갱신 주기 5분으로 조정 (다중 PC 환경 대응)
 - [x] run.bat 런처: venv 자동 생성/복구 (Dropbox 다중 PC 대응)
